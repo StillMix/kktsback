@@ -5,6 +5,7 @@ from db import Base, get_db  # Импортируем Base и get_db
 from student import router as student_router
 from teacher import router as teacher_router
 from backup import router as backup_router
+from auth import router as auth_router
 from decouple import config  
 
 ALLOWED_IPS = config("ALLOWED_IPS").split(",")  
@@ -28,4 +29,4 @@ app = FastAPI()
 app.include_router(student_router)
 app.include_router(teacher_router)
 app.include_router(backup_router)
-
+app.include_router(auth_router)

@@ -94,5 +94,39 @@ class ClassRykDB(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     teacher_id = Column(Integer, ForeignKey("teachers.id"))
- 
+
+
+
+
+
+
+
+
+
+
+
+
+
+# class LessonsDB(Base):
+#     __tablename__ = "lessons"
+
+#     id = Column(Integer, primary_key=True, index=True)
+#     date = Column(String)
+
+
+#     session = relationship("SessionDB", backref="session_lessons")
+
+# class SessionDB(Base):
+#     __tablename__ = "session"
     
+#     id = Column(Integer, primary_key=True, index=True)
+#     group = Column(String)
+#     teacher = Column(String)
+#     teacher2 = Column(String)
+#     start = Column(String)
+#     end = Column(String)
+#     clases = Column(String)
+#     adress = Column(String)
+#     color = Column(String)
+    
+#     lessons_id = Column(Integer, ForeignKey("lessons.id"))
