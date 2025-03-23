@@ -130,157 +130,192 @@ async def put_teacher(id: int, teacher_data: Updateteacher, db: Session = Depend
     return {"message": "Учитель обновлен", "user": user}
 
 
-@router.get("/teachers/{id}/subjects/")
-async def get_teacher_subjects(id: int, db: Session = Depends(get_db)):
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@router.get("/teachers/{id}/group/")
+async def get_teacher_groups(id: int, db: Session = Depends(get_db)):
     # Ищем студента
     user = db.query(TeacherDB).filter(TeacherDB.id == id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Учитель не найден")
 
     # Получаем предметы студента
-    subjects = db.query(PredmetDB).filter(PredmetDB.user_id == id).all()
+    groups = db.query(GroupDB).filter(GroupDB.teacher_id == id).all()
     
-    return {"message": "Предметы получены","subjects": subjects}
+    return {"message": "Группы получены","group": groups}
 
-class PredmetCreate(BaseModel):
-    color: str
-    predmet: str
-    attes: str
-    srbal: float
+class GroupCreate(BaseModel):
+    name: str
 
-@router.post("/teachers/{id}/subjects/")
-async def add_teacher_subject(id: int, subject: PredmetCreate, db: Session = Depends(get_db)):
-    # Проверяем, есть ли студент
+
+@router.post("/teachers/{id}/groups/")
+async def add_teacher_group(id: int, group: GroupCreate, db: Session = Depends(get_db)):
+
     user = db.query(TeacherDB).filter(TeacherDB.id == id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Учитель не найден")
 
     # Создаем предмет
-    new_subject = PredmetDB(
-        color=subject.color,
-        predmet=subject.predmet,
-        attes=subject.attes,
-        srbal=subject.srbal,
-        user_id=id
+    new_group = GroupDB(
+        name=group.name,
+        teacher_id=id
     )
 
-    db.add(new_subject)
+    db.add(new_group)
     db.commit()
-    db.refresh(new_subject)
+    db.refresh(new_group)
 
-    return {"message": "Класс добавлен", "subject": new_subject}
+    return {"message": "Группа добавлена", "group": new_group}
 
-class PredmetUpdate(BaseModel):
-    color: Optional[str] = None
-    predmet: Optional[str] = None
-    attes: Optional[str] = None
-    srbal: Optional[float] = None
+class GroupUpdate(BaseModel):
+    name: Optional[str] = None
+
+@router.put("/teachers/{id}/groups/{group_id}/")
+async def update_group(id: int, group_id: int, group_data: GroupUpdate, db: Session = Depends(get_db)):
+    # Проверяем, существует ли студент
+    user = db.query(TeacherDB).filter(TeacherDB.id == id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Студент не найден")
+
+    # Проверяем, существует ли предмет и принадлежит ли он студенту
+    group = db.query(GroupDB).filter(GroupDB.id == group_id, GroupDB.teacher_id == id).first()
+    if not group:
+        raise HTTPException(status_code=404, detail="Группа не найдена или не принадлежит студенту")
+
+    # Обновляем только переданные поля
+    if group_data.name is not None:
+        group.name = group_data.name
 
 
-@router.delete("/teachers/{id}/subjects/{subject_id}/")
-async def delete_subject(id: int, subject_id: int, db: Session = Depends(get_db)):
+    db.commit()
+    db.refresh(group)
+
+    return {"message": "Группы обновлены", "group": group}
+
+@router.delete("/teachers/{id}/groups/{group_id}/")
+async def delete_group(id: int, group_id: int, db: Session = Depends(get_db)):
     user = db.query(TeacherDB).filter(TeacherDB.id == id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Учитель не найден")
 
-    subject = db.query(PredmetDB).filter(PredmetDB.id == subject_id, PredmetDB.user_id == id).first()
-    if not subject:
-        raise HTTPException(status_code=404, detail="Класс не найден или не прнадлежит студенту")
+    group = db.query(GroupDB).filter(GroupDB.id == group_id, GroupDB.teacher_id == id).first()
+    if not group:
+        raise HTTPException(status_code=404, detail="Группа не найден или не прнадлежит учителю")
 
-    db.delete(subject)
+    db.delete(group)
     db.commit()
 
-    return {"message": "Класс удален"}
+    return {"message": "Группа удалена"}
 
 
 
-class OcenkaCreate(BaseModel):
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@router.get("/teachers/{id}/classwork/")
+async def get_teacher_classryks(id: int, db: Session = Depends(get_db)):
+    # Ищем студента
+    user = db.query(TeacherDB).filter(TeacherDB.id == id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Учитель не найден")
+
+    # Получаем предметы студента
+    classryks = db.query(ClassRykDB).filter(ClassRykDB.teacher_id == id).all()
+    
+    return {"message": "Классное руководство получены","classryk": classryks}
+
+class classryksCreate(BaseModel):
     name: str
-    data: str
-    ocenka: str
 
-@router.post("/teachers/{id}/subjects/{subject_id}/ocenki/")
-async def create_ocenka(id: int, subject_id: int, ocenka: OcenkaCreate, db: Session = Depends(get_db)):
-    # Проверяем, существует ли студент
+
+@router.post("/teachers/{id}/classwork/")
+async def add_teacher_classryks(id: int, classryks: classryksCreate, db: Session = Depends(get_db)):
+
     user = db.query(TeacherDB).filter(TeacherDB.id == id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Учитель не найден")
 
-    # Проверяем, существует ли предмет и принадлежит ли он студенту
-    subject = db.query(PredmetDB).filter(PredmetDB.id == subject_id, PredmetDB.user_id == id).first()
-    if not subject:
-        raise HTTPException(status_code=404, detail="Класс не найден или не принадлежит студенту")
+    # Создаем предмет
+    new_classryks = ClassRykDB(
+        name=classryks.name,
+        teacher_id=id
+    )
 
-    # Создаем новую оценку
-    new_ocenka = OcenkaDB(name=ocenka.name, data=ocenka.data, ocenka=ocenka.ocenka, predmet_id=subject.id)
-    db.add(new_ocenka)
+    db.add(new_classryks)
     db.commit()
-    db.refresh(new_ocenka)
+    db.refresh(new_classryks)
 
-    return {"message": "Класс добавлена", "ocenka": new_ocenka}
+    return {"message": "Классное руководство добавлено", "classryks": new_classryks}
 
+class classryksUpdate(BaseModel):
+    name: Optional[str] = None
 
-@router.get("/teachers/{id}/subjects/{subject_id}/ocenki/")
-async def get_ocenki(id: int, subject_id: int, db: Session = Depends(get_db)):
+@router.put("/teachers/{id}/classworks/{classryks_id}/")
+async def update_classryks(id: int, classryks_id: int, classryks_data: classryksUpdate, db: Session = Depends(get_db)):
     # Проверяем, существует ли студент
+    user = db.query(TeacherDB).filter(TeacherDB.id == id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Студент не найден")
+
+    # Проверяем, существует ли предмет и принадлежит ли он студенту
+    classryk = db.query(ClassRykDB).filter(ClassRykDB.id == classryks_id, ClassRykDB.teacher_id == id).first()
+    if not classryk:
+        raise HTTPException(status_code=404, detail="Классное руководство не найдено или не принадлежит учителю")
+
+    # Обновляем только переданные поля
+    if classryks_data.name is not None:
+        classryk.name = classryks_data.name
+
+
+    db.commit()
+    db.refresh(classryk)
+
+    return {"message": "Группы обновлены", "classryks": classryk}
+
+@router.delete("/teachers/{id}/classworks/{classryks_id}/")
+async def delete_classryks(id: int, classryks_id: int, db: Session = Depends(get_db)):
     user = db.query(TeacherDB).filter(TeacherDB.id == id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Учитель не найден")
 
-    # Проверяем, существует ли предмет и принадлежит ли он студенту
-    subject = db.query(PredmetDB).filter(PredmetDB.id == subject_id, PredmetDB.user_id == id).first()
-    if not subject:
-        raise HTTPException(status_code=404, detail="Класс не найден или не принадлежит студенту")
+    classryks = db.query(ClassRykDB).filter(ClassRykDB.id == classryks_id, ClassRykDB.teacher_id == id).first()
+    if not classryks:
+        raise HTTPException(status_code=404, detail="Классное руководство не найдено или не прнадлежит учителю")
 
-    # Получаем все оценки для данного предмета
-    ocenki = db.query(OcenkaDB).filter(OcenkaDB.predmet_id == subject_id).all()
-
-    return {"ocenki": ocenki}
-
-
-@router.put("/teachers/{id}/subjects/{subject_id}/ocenki/{ocenka_id}/")
-async def update_ocenka(
-    id: int, 
-    subject_id: int, 
-    ocenka_id: int, 
-    ocenka: OcenkaCreate,  # Параметры для обновления
-    db: Session = Depends(get_db)
-):
-    # Находим оценку по ID
-    db_ocenka = db.query(OcenkaDB).filter(OcenkaDB.id == ocenka_id, OcenkaDB.predmet_id == subject_id).first()
-
-    # Если оценка не найдена, возвращаем ошибку
-    if not db_ocenka:
-        raise HTTPException(status_code=404, detail="Класс не найдена")
-
-    # Обновляем поля оценка
-    db_ocenka.name = ocenka.name
-    db_ocenka.data = ocenka.data
-    db_ocenka.ocenka = ocenka.ocenka
-
-    db.commit()  # Сохраняем изменения
-    db.refresh(db_ocenka)  # Обновляем объект
-
-    return {"message": "Класс обновлена", "ocenka": db_ocenka}
-
-@router.delete("/teachers/{id}/subjects/{subject_id}/ocenki/{ocenka_id}/")
-async def delete_ocenka(id: int, subject_id: int, ocenka_id: int, db: Session = Depends(get_db)):
-    # Проверяем, существует ли студент
-    user = db.query(TeacherDB).filter(TeacherDB.id == id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Учитель не найден")
-
-    # Проверяем, существует ли предмет и принадлежит ли он студенту
-    subject = db.query(PredmetDB).filter(PredmetDB.id == subject_id, PredmetDB.user_id == id).first()
-    if not subject:
-        raise HTTPException(status_code=404, detail="Класс не найден или не принадлежит студенту")
-
-    # Проверяем, существует ли оценка
-    ocenka = db.query(OcenkaDB).filter(OcenkaDB.id == ocenka_id, OcenkaDB.predmet_id == subject_id).first()
-    if not ocenka:
-        raise HTTPException(status_code=404, detail="Класс не найдена")
-
-    db.delete(ocenka)
+    db.delete(classryks)
     db.commit()
 
-    return {"message": "Класс удалена"}
+    return {"message": "Классное руководство удалено"}
+
