@@ -16,6 +16,16 @@ class AuthRequest(BaseModel):
     login: str
     password: str  # исправленная опечатка
 
+class AuthResponse(BaseModel):
+    access_token: str
+    token_type: str
+    role: str
+    name: str
+    fullname: str
+    login: str
+    gmail: str
+    vk: str
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
 
@@ -25,7 +35,7 @@ def create_access_token(data: dict, expires_delta: timedelta):
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-@router.post("/auth/login")  # Должен быть POST-запрос
+@router.post("/auth/login", response_model=AuthResponse)  # Должен быть POST-запрос
 async def login(auth_data: AuthRequest, db: Session = Depends(get_db)):
     user = db.query(TeacherDB).filter(TeacherDB.login == auth_data.login).first()
     role = "teacher"
@@ -43,4 +53,13 @@ async def login(auth_data: AuthRequest, db: Session = Depends(get_db)):
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
     )
 
-    return {"access_token": access_token, "token_type": "bearer", "role": role}
+    return AuthResponse(
+        access_token=access_token,
+        token_type="bearer",
+        role=role,
+        name=user.name,
+        fullname=user.fullname,
+        login=user.login,
+        gmail=user.gmail,
+        vk=user.vk,
+    )
