@@ -37,7 +37,7 @@ def create_access_token(data: dict, expires_delta: timedelta):
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-@router.post("/auth/login", response_model=AuthResponse)  # Должен быть POST-запрос
+@router.post("/auth/login", response_model=AuthResponse)
 async def login(auth_data: AuthRequest, db: Session = Depends(get_db)):
     user = db.query(TeacherDB).filter(TeacherDB.login == auth_data.login).first()
     role = "teacher"
@@ -48,6 +48,9 @@ async def login(auth_data: AuthRequest, db: Session = Depends(get_db)):
 
     if not user or not verify_password(auth_data.password, user.password):
         raise HTTPException(status_code=401, detail="Неверный логин или пароль")
+
+    # Преобразуем поле group в строку, если оно является списком
+    group = ', '.join(user.group) if isinstance(user.group, list) else user.group
 
     # Создаем JWT-токен
     access_token = create_access_token(
@@ -64,6 +67,6 @@ async def login(auth_data: AuthRequest, db: Session = Depends(get_db)):
         login=user.login,
         gmail=user.gmail,
         vk=user.vk,
-        group=user.group,
+        group=group,  # Преобразованный group
         id=user.id,
     )
