@@ -107,26 +107,29 @@ class ClassRykDB(Base):
 
 
 
-# class LessonsDB(Base):
-#     __tablename__ = "lessons"
+class LessonsDB(Base):
+    __tablename__ = "lessons"
 
-#     id = Column(Integer, primary_key=True, index=True)
-#     date = Column(String)
+    id = Column(Integer, primary_key=True, index=True)
+    date = Column(String)  # Оставляем строкой, как ты просил
+
+    # Связь один ко многим: один урок - много сессий
+    sessions = relationship("SessionDB", back_populates="lesson")
 
 
-#     session = relationship("SessionDB", backref="session_lessons")
-
-# class SessionDB(Base):
-#     __tablename__ = "session"
+class SessionDB(Base):
+    __tablename__ = "session"
     
-#     id = Column(Integer, primary_key=True, index=True)
-#     group = Column(String)
-#     teacher = Column(String)
-#     teacher2 = Column(String)
-#     start = Column(String)
-#     end = Column(String)
-#     clases = Column(String)
-#     adress = Column(String)
-#     color = Column(String)
-    
-#     lessons_id = Column(Integer, ForeignKey("lessons.id"))
+    id = Column(Integer, primary_key=True, index=True)
+    group = Column(String)  # Можно сделать ForeignKey на таблицу групп
+    teacher = Column(String)  # Можно сделать ForeignKey на таблицу учителей
+    teacher2 = Column(String, nullable=True)  # Второй учитель не всегда есть
+    start = Column(String)  
+    end = Column(String)
+    clases = Column(String)  
+    adress = Column(String)
+    color = Column(String)
+
+    # Внешний ключ для связи с `LessonsDB`
+    lessons_id = Column(Integer, ForeignKey("lessons.id"))
+    lesson = relationship("LessonsDB", back_populates="sessions")

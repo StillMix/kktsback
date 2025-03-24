@@ -7,12 +7,14 @@ from teacher import router as teacher_router
 from backup import router as backup_router
 from auth import router as auth_router
 from websocket import router as websocket_router
+from lesson import router as lesson_router
 from decouple import config  
 from fastapi.middleware.cors import CORSMiddleware
 
 origins = [
     "http://localhost:5173",  # Ваш Vue.js (Vite) сервер
     "http://127.0.0.1:5173",
+    "http://172.20.10.2:8000",
     "https://stillmix-kktsback-325a.twc1.net", 
     "https://stillmix-kkts-c97f.twc1.net"
       # Разрешить ваш основной домен (если нужно)
@@ -53,4 +55,4 @@ app.include_router(teacher_router)
 app.include_router(backup_router)
 app.include_router(auth_router)
 app.include_router(websocket_router)
-
+app.include_router(lesson_router)

@@ -1,16 +1,20 @@
 from sqlalchemy.orm import Session
+from fastapi import Security, HTTPException, Depends
+from fastapi.security import OAuth2PasswordBearer
 from fastapi import HTTPException, APIRouter, Depends
 from pydantic import BaseModel
 import bcrypt
-from jose import jwt
+from jose import jwt, JWTError
 from datetime import datetime, timedelta
 from db import get_db, TeacherDB, UserDB
+from websocket import notify_disconnect_user
 
 router = APIRouter()
 
 SECRET_KEY = "mysecretkey"  # Лучше вынести в .env
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 class AuthRequest(BaseModel):
     login: str
@@ -37,6 +41,13 @@ def create_access_token(data: dict, expires_delta: timedelta):
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
+def decode_token(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except JWTError:
+        return None
+    
 @router.post("/auth/login", response_model=AuthResponse)
 async def login(auth_data: AuthRequest, db: Session = Depends(get_db)):
     user = db.query(TeacherDB).filter(TeacherDB.login == auth_data.login).first()
@@ -75,3 +86,29 @@ async def login(auth_data: AuthRequest, db: Session = Depends(get_db)):
         group=group,  # Группа теперь преобразована в строку
         id=user.id,
     )
+
+
+async def get_current_user(token: str = Security(oauth2_scheme), db: Session = Depends(get_db)):
+    payload = decode_token(token)  # Декодируем JWT
+    user_id = payload.get("sub")
+    role = payload.get("role")  # Получаем роль
+
+    if user_id is None or role not in ["user", "teacher"]:
+        raise HTTPException(status_code=401, detail="Неверный токен")
+
+    # Выбираем соответствующую таблицу по роли
+    if role == "user":
+        user = db.query(UserDB).filter(UserDB.id == user_id).first()
+    else:
+        user = db.query(TeacherDB).filter(TeacherDB.id == user_id).first()
+
+    if not user:
+        raise HTTPException(status_code=401, detail="Пользователь не найден")
+
+    # Проверяем, удален ли пользователь
+    if hasattr(user, "is_deleted") and user.is_deleted:
+        await notify_disconnect_user(user.id, user.name, role)  # Передаем user.id вместо id
+        raise HTTPException(status_code=401, detail="Пользователь удалён или заблокирован")
+
+    return user
+

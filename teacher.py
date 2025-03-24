@@ -4,6 +4,7 @@ from db import TeacherDB, GroupDB, ClassRykDB, Base, get_db
 from pydantic import BaseModel 
 from typing import Optional
 import bcrypt
+from websocket import notify_disconnect_user  # Импортируем функцию
 
 router = APIRouter()
 
@@ -64,17 +65,19 @@ async def get_all_teachers(db: Session = Depends(get_db)):
 
 @router.delete("/teachers/{id}/")
 async def del_teacher(id: int, db: Session = Depends(get_db)):
-    # Ищем пользователя по id
+    # Ищем учителя по id
     user = db.query(TeacherDB).filter(TeacherDB.id == id).first()
 
-    # Если пользователь не найден, возвращаем ошибку
+    # Если учитель не найден, возвращаем ошибку
     if not user:
         raise HTTPException(status_code=404, detail="Учитель не найден")
 
-    # Удаляем пользователя
+    # Удаляем учителя
     db.delete(user)
     db.commit()
 
+    # Отправляем уведомление об отключении
+    await notify_disconnect_user(user.id, user.name, "teacher")
     return {"message": f"Учитель удален"}
 
 

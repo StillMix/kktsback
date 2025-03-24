@@ -1,9 +1,12 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, APIRouter, Depends
-from db import UserDB, PredmetDB, OcenkaDB, Base, get_db
+from db import UserDB, PredmetDB, OcenkaDB, TeacherDB, Base, get_db
 from pydantic import BaseModel 
 from typing import Optional
 import bcrypt
+from websocket import notify_disconnect_user  # Импортируем функцию
+from auth import get_current_user
+
 
 router = APIRouter()
 
@@ -114,6 +117,8 @@ async def del_student(id: int, db: Session = Depends(get_db)):
     db.delete(user)
     db.commit()
 
+    # Отправляем уведомление об отключении
+    await notify_disconnect_user(user.id, user.name, "student")
     return {"message": f"Студент удален"}
 
 
@@ -172,16 +177,35 @@ async def put_student(id: int, student_data: UpdateStudent, db: Session = Depend
 
 
 @router.get("/students/{id}/subjects/")
-async def get_student_subjects(id: int, db: Session = Depends(get_db)):
-    # Ищем студента
-    user = db.query(UserDB).filter(UserDB.id == id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Студент не найден")
+async def get_student_subjects(
+    id: int, 
+    db: Session = Depends(get_db),
+    current_user: UserDB = Depends(get_current_user)  # Добавляем проверку текущего пользователя
+):
+    # Если текущий пользователь - учитель, то проверяем, может ли он видеть этого студента
+    if current_user.role == "teacher":
+        # Проверка, если у учителя есть доступ к группе студента
+        student = db.query(UserDB).filter(UserDB.id == id).first()
+        if not student:
+            raise HTTPException(status_code=404, detail="Студент не найден")
+
+        # Проверяем, что учитель ведет занятия в группе студента
+        teacher = db.query(TeacherDB).filter(TeacherDB.id == current_user.id).first()
+        if not teacher:
+            raise HTTPException(status_code=404, detail="Учитель не найден")
+
+        # Проверка, что учитель связан с группой студента (например, через group)
+        if teacher.group and student.group != teacher.group:
+            raise HTTPException(status_code=403, detail="Учитель не имеет доступа к этому студенту")
+
+    elif current_user.id != id:
+        # Если текущий пользователь не учитель, то проверяем, что он не пытается получить доступ к данным другого пользователя
+        raise HTTPException(status_code=403, detail="У вас нет доступа к данным другого студента")
 
     # Получаем предметы студента
     subjects = db.query(PredmetDB).filter(PredmetDB.user_id == id).all()
-    
-    return {"message": "Предметы получены","subjects": subjects}
+
+    return {"message": "Предметы получены", "subjects": subjects}
 
 class PredmetCreate(BaseModel):
     color: str
