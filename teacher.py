@@ -24,7 +24,7 @@ def hash_password(password: str) -> str:
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
     return hashed_password.decode('utf-8')
 
-@router.post("/teachers/")
+@router.post("/cteachers/")
 async def register_teacher(item: Item, db: Session = Depends(get_db)):
     # Проверка уникальности в базе данных
     existing_user = db.query(TeacherDB).filter(TeacherDB.gmail == item.gmail).first()
@@ -54,7 +54,7 @@ async def register_teacher(item: Item, db: Session = Depends(get_db)):
 
     return {"message": "Учитель успешно зарегистрирован", "user": item}
 
-@router.get("/teachers/")
+@router.get("/gteachers/")
 async def get_all_teachers(db: Session = Depends(get_db)):
     # Получаем всех пользователей из базы данных
     users = db.query(TeacherDB).all()
@@ -62,7 +62,7 @@ async def get_all_teachers(db: Session = Depends(get_db)):
     # Преобразуем пользователей в формат, подходящий для возврата
     return {"message": "Учителя получены", "users": users}
 
-@router.delete("/teachers/{id}/")
+@router.delete("/dteachers/{id}/")
 async def del_teacher(id: int, db: Session = Depends(get_db)):
     # Ищем пользователя по id
     user = db.query(TeacherDB).filter(TeacherDB.id == id).first()
@@ -78,7 +78,7 @@ async def del_teacher(id: int, db: Session = Depends(get_db)):
     return {"message": f"Учитель удален"}
 
 
-@router.get("/teachers/{id}/")
+@router.get("/gteachers/{id}/")
 async def get_one_teacher(id: int, db: Session = Depends(get_db)):
     # Ищем студента по id
     user = db.query(TeacherDB).filter(TeacherDB.id == id).first()
@@ -100,7 +100,7 @@ class Updateteacher(BaseModel):
     vk: Optional[str] = None
     group: Optional[str] = None
 
-@router.put("/teachers/{id}/")
+@router.put("/pteachers/{id}/")
 async def put_teacher(id: int, teacher_data: Updateteacher, db: Session = Depends(get_db)):
     # Ищем студента по id
     user = db.query(TeacherDB).filter(TeacherDB.id == id).first()
