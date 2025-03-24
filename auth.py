@@ -17,6 +17,7 @@ class AuthRequest(BaseModel):
     password: str  # исправленная опечатка
 
 class AuthResponse(BaseModel):
+    id: int
     access_token: str
     token_type: str
     role: str
@@ -63,5 +64,6 @@ async def login(auth_data: AuthRequest, db: Session = Depends(get_db)):
         login=user.login,
         gmail=user.gmail,
         vk=user.vk,
-        group=user.group
+        group=user.group,
+        id=user.id,
     )
