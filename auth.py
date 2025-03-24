@@ -25,6 +25,7 @@ class AuthResponse(BaseModel):
     login: str
     gmail: str
     vk: str
+    group: str
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
@@ -62,4 +63,5 @@ async def login(auth_data: AuthRequest, db: Session = Depends(get_db)):
         login=user.login,
         gmail=user.gmail,
         vk=user.vk,
+        group=user.group
     )
