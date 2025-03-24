@@ -49,8 +49,13 @@ async def login(auth_data: AuthRequest, db: Session = Depends(get_db)):
     if not user or not verify_password(auth_data.password, user.password):
         raise HTTPException(status_code=401, detail="Неверный логин или пароль")
 
-    # Преобразуем поле group в строку, если оно является списком
-    group = ', '.join(user.group) if isinstance(user.group, list) else user.group
+    # Преобразуем group в строку
+    if role == "teacher":
+        # Если у учителя есть группа, то берём её название, если группа есть
+        group = user.group[0].name if user.group else "Не назначена"
+    else:
+        # Для студента это поле остаётся строкой
+        group = user.group
 
     # Создаем JWT-токен
     access_token = create_access_token(
@@ -67,6 +72,6 @@ async def login(auth_data: AuthRequest, db: Session = Depends(get_db)):
         login=user.login,
         gmail=user.gmail,
         vk=user.vk,
-        group=group,  # Преобразованный group
+        group=group,  # Группа теперь преобразована в строку
         id=user.id,
     )
