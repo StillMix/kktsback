@@ -64,6 +64,7 @@ async def get_teacher_session(id: int, db: Session = Depends(get_db)):
     return {"message": "Пары получены","session": session}
 
 class sessionCreate(BaseModel):
+    name:str
     group: str  # Это поле может быть пустым
     teacher: str
     teacher2: Optional[str] = None
@@ -83,6 +84,7 @@ async def add_teacher_session(id: int, session: sessionCreate, db: Session = Dep
 
     # Создаем предмет
     new_session = SessionDB(
+        name = session.name,
         group =session.group,
         teacher =session.teacher,
         teacher2 =session.teacher2,
@@ -101,6 +103,7 @@ async def add_teacher_session(id: int, session: sessionCreate, db: Session = Dep
     return {"message": "Пара добавлена", "session": new_session}
 
 class sessionUpdate(BaseModel):
+    name: Optional[str] = None
     group: Optional[str] = None
     teacher: Optional[str] = None
     teacher2: Optional[str] = None
@@ -121,6 +124,8 @@ async def update_session(id: int, session_id: int, session_data: sessionUpdate, 
         raise HTTPException(status_code=404, detail="Пара не найдена или не принадлежит дню")
 
     # Обновляем только переданные поля
+    if session_data.name is not None:
+        session.name = session_data.name
     if session_data.group is not None:
         session.group = session_data.group
     if session_data.teacher is not None:

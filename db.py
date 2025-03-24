@@ -121,6 +121,7 @@ class SessionDB(Base):
     __tablename__ = "session"
     
     id = Column(Integer, primary_key=True, index=True)
+    name = Column(String)
     group = Column(String)  # Можно сделать ForeignKey на таблицу групп
     teacher = Column(String)  # Можно сделать ForeignKey на таблицу учителей
     teacher2 = Column(String, nullable=True)  # Второй учитель не всегда есть
