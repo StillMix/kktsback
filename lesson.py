@@ -3,6 +3,7 @@ from fastapi import HTTPException, APIRouter, Depends
 from db import LessonsDB, SessionDB, Base, get_db
 from pydantic import BaseModel 
 from typing import Optional
+from websocket import notify_racp_group
 
 
 router = APIRouter()
@@ -99,7 +100,7 @@ async def add_teacher_session(id: int, session: sessionCreate, db: Session = Dep
     db.add(new_session)
     db.commit()
     db.refresh(new_session)
-
+    await notify_racp_group(session.group, f"newlesson:{session.group}")
     return {"message": "Пара добавлена", "session": new_session}
 
 class sessionUpdate(BaseModel):
@@ -147,7 +148,7 @@ async def update_session(id: int, session_id: int, session_data: sessionUpdate, 
 
     db.commit()
     db.refresh(session)
-
+    await notify_racp_group(session.group, f"updatelesson:{session.group}")
     return {"message": "Пары обновлены", "session": session}
 
 @router.delete("/lesson/{id}/session/{session_id}/")
@@ -162,5 +163,5 @@ async def delete_session(id: int, session_id: int, db: Session = Depends(get_db)
 
     db.delete(session)
     db.commit()
-
+    await notify_racp_group(session.group, f"dellesson:{session.group}")
     return {"message": "Пара удалена"}
