@@ -182,15 +182,14 @@ async def get_student_subjects(
     db: Session = Depends(get_db),
     current_user: UserDB = Depends(get_current_user)  # Добавляем проверку текущего пользователя
 ):
-    # Если текущий пользователь - учитель, то проверяем, может ли он видеть этого студента
-    if current_user.role == "teacher":
+    if current_user["role"] == "teacher":
         # Проверка, если у учителя есть доступ к группе студента
         student = db.query(UserDB).filter(UserDB.id == id).first()
         if not student:
             raise HTTPException(status_code=404, detail="Студент не найден")
-
+        print(current_user)
         # Проверяем, что учитель ведет занятия в группе студента
-        teacher = db.query(TeacherDB).filter(TeacherDB.id == current_user.id).first()
+        teacher = db.query(TeacherDB).filter(TeacherDB.id == current_user['user'].id).first()
         if not teacher:
             raise HTTPException(status_code=404, detail="Учитель не найден")
 
@@ -198,7 +197,7 @@ async def get_student_subjects(
         if teacher.group and student.group != teacher.group:
             raise HTTPException(status_code=403, detail="Учитель не имеет доступа к этому студенту")
 
-    elif current_user.id != id:
+    elif current_user['user'].id != id:
         # Если текущий пользователь не учитель, то проверяем, что он не пытается получить доступ к данным другого пользователя
         raise HTTPException(status_code=403, detail="У вас нет доступа к данным другого студента")
 

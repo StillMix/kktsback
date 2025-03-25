@@ -70,9 +70,10 @@ async def login(auth_data: AuthRequest, db: Session = Depends(get_db)):
 
     # Создаем JWT-токен
     access_token = create_access_token(
-        data={"sub": user.id, "role": role},
-        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+      data={"sub": str(user.id), "role": role},  # Преобразуем ID в строку
+      expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
     )
+
 
     return AuthResponse(
         access_token=access_token,
@@ -88,27 +89,21 @@ async def login(auth_data: AuthRequest, db: Session = Depends(get_db)):
     )
 
 
-async def get_current_user(token: str = Security(oauth2_scheme), db: Session = Depends(get_db)):
-    payload = decode_token(token)  # Декодируем JWT
-    user_id = payload.get("sub")
-    role = payload.get("role")  # Получаем роль
+async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: int = payload.get("sub")
+        role: str = payload.get("role")
 
-    if user_id is None or role not in ["user", "teacher"]:
-        raise HTTPException(status_code=401, detail="Неверный токен")
+        if user_id is None or role is None:
+            raise HTTPException(status_code=401, detail="Недействительный токен")
 
-    # Выбираем соответствующую таблицу по роли
-    if role == "user":
+        # Найти пользователя в БД
         user = db.query(UserDB).filter(UserDB.id == user_id).first()
-    else:
-        user = db.query(TeacherDB).filter(TeacherDB.id == user_id).first()
+        if user is None:
+            raise HTTPException(status_code=401, detail="Пользователь не найден")
 
-    if not user:
-        raise HTTPException(status_code=401, detail="Пользователь не найден")
-
-    # Проверяем, удален ли пользователь
-    if hasattr(user, "is_deleted") and user.is_deleted:
-        await notify_disconnect_user(user.id, user.name, role)  # Передаем user.id вместо id
-        raise HTTPException(status_code=401, detail="Пользователь удалён или заблокирован")
-
-    return user
-
+        return {"user": user, "role": role}
+    except JWTError as e:
+        print("Ошибка JWT:", e)
+        raise HTTPException(status_code=401, detail="Недействительный токен")
