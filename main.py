@@ -15,8 +15,8 @@ origins = [
     "http://localhost:5173",  # Ваш Vue.js (Vite) сервер
     "http://127.0.0.1:5173",
     "http://172.20.10.2:8000",
-    "https://stillmix-kktsback-325a.twc1.net", 
-    "https://stillmix-kkts-c97f.twc1.net"
+    "https://kktsback.tw1.ru", 
+    "https://kkts.tw1.ru"
       # Разрешить ваш основной домен (если нужно)
 ]
 
