@@ -32,6 +32,7 @@ class Item(BaseModel):
     gmail: str
     vk: str
     group: str
+    srbal: str
     ocenki: list[PredmetItem] = []
 
 
@@ -63,7 +64,8 @@ async def register_student(item: Item, db: Session = Depends(get_db)):
         password=hashed_password,  # Храним хэшированный пароль
         gmail=item.gmail, 
         vk=item.vk, 
-        group=item.group
+        group=item.group,
+        srbal=item.srbal
     )
     db.add(user)
     db.commit()
@@ -143,6 +145,7 @@ class UpdateStudent(BaseModel):
     gmail: Optional[str] = None
     vk: Optional[str] = None
     group: Optional[str] = None
+    srbal: Optional[str] = None
 
 @router.put("/students/{id}/")
 async def put_student(id: int, student_data: UpdateStudent, db: Session = Depends(get_db)):
@@ -168,6 +171,8 @@ async def put_student(id: int, student_data: UpdateStudent, db: Session = Depend
         user.vk = student_data.vk
     if student_data.group is not None:
         user.group = student_data.group
+    if student_data.srbal is not None:
+        user.srbal = student_data.srbal
 
     # Сохраняем изменения в базе данных
     db.commit()

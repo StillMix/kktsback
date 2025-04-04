@@ -24,7 +24,7 @@ class PredmetDB(Base):
     srbal = Column(Integer)
     user_id = Column(Integer, ForeignKey("users.id"))
     
-    ocenki = relationship("OcenkaDB", back_populates="predmet")  # связь с OcenkaDB
+    ocenki = relationship("OcenkaDB", back_populates="predmet" , lazy='joined')  # связь с OcenkaDB
 
 class OcenkaDB(Base):
     __tablename__ = "ocenki"
@@ -35,7 +35,7 @@ class OcenkaDB(Base):
     ocenka = Column(String)
     predmet_id = Column(Integer, ForeignKey("predmeti.id"))  # внешний ключ на PredmetDB
     
-    predmet = relationship("PredmetDB", back_populates="ocenki")  #
+    predmet = relationship("PredmetDB", back_populates="ocenki" )  #
 
 class UserDB(Base):
     __tablename__ = "users"
@@ -49,8 +49,9 @@ class UserDB(Base):
     gmail = Column(String, unique=True, index=True)
     vk = Column(String, unique=True, index=True)
     group = Column(String)
+    srbal = Column(String)
 
-    predmeti = relationship("PredmetDB", backref="user")
+    predmeti = relationship("PredmetDB" , lazy='joined') 
 
 
 
@@ -78,7 +79,7 @@ class TeacherDB(Base):
 
     # Уникальные backref для разных связей
     group = relationship("GroupDB", backref="group_teachers")  # связь с группой
-    classryk = relationship("ClassRykDB", backref="classryk_teachers")  # связь с классами
+    classryk = relationship("ClassRykDB", lazy='joined')  # связь с классами
 
 class GroupDB(Base):
     __tablename__ = "group"
@@ -114,7 +115,7 @@ class LessonsDB(Base):
     date = Column(String)  # Оставляем строкой, как ты просил
 
     # Связь один ко многим: один урок - много сессий
-    sessions = relationship("SessionDB", back_populates="lesson")
+    sessions = relationship("SessionDB", lazy='joined')
 
 
 class SessionDB(Base):
