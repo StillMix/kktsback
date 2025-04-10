@@ -101,6 +101,8 @@ async def add_teacher_session(id: int, session: sessionCreate, db: Session = Dep
     db.commit()
     db.refresh(new_session)
     await notify_racp_group(session.group, f"newlesson:{session.group}")
+    await notify_racp_group(session.teacher, f"newlessonteacher:{session.teacher}")
+    await notify_racp_group(session.teacher2, f"newlessonteacher2:{session.teacher2}")
     return {"message": "Пара добавлена", "session": new_session}
 
 class sessionUpdate(BaseModel):
